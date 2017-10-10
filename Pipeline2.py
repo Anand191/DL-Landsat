@@ -16,9 +16,9 @@ from pymasker import LandsatConfidence
 from skimage import io
 import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D, UpSampling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
-from keras import optimizers
+from keras import optimizers,regularizers
 from keras.utils import to_categorical
 import os
 import pandas as pd
@@ -34,7 +34,7 @@ df['B3'] = str(dir1)+"/"+df['GP']+"/"+df['P']+"/"+df['Child']+"/"+df['Child']+"_
 df['B2'] = str(dir1)+"/"+df['GP']+"/"+df['P']+"/"+df['Child']+"/"+df['Child']+"_B2.TIF"
 
 tdimn = (256,256)
-pn = 31
+pn = 17
 st = 2
 ndimn = (128,128)
 #%%
@@ -149,7 +149,7 @@ tdata = train_data(9,11)
 #%%
 patch_height, patch_width = pn,pn
 patch_len = patch_height * patch_width *3
-epochs = 20
+epochs = 10
 batch_size =  512
 
 num_classes = 2
@@ -167,23 +167,28 @@ y_test = to_categorical(tdata[:,-1],num_classes)
 #%%
 #Network
 model = Sequential()
-model.add(Conv2D(32, (3, 3), input_shape=input_shape))
+model.add(Conv2D(16, (3, 3), input_shape=input_shape))
+model.add(Activation('relu'))
+model.add(Conv2D(16, (3, 3)))
+model.add(Activation('relu'))
+#model.add(MaxPooling2D(pool_size=(2, 2),strides=1))
+
+model.add(Conv2D(32, (3, 3)))
 model.add(Activation('relu'))
 model.add(Conv2D(32, (3, 3)))
 model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2),strides=1))
-
-model.add(Conv2D(64, (3, 3)))
-model.add(Activation('relu'))
-model.add(Conv2D(64, (3, 3)))
-model.add(Activation('relu'))
+model.add(UpSampling2D(size=(2,2)))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 
-model.add(Conv2D(128, (3, 3)))
+model.add(Conv2D(64, (3, 3)))
 model.add(Activation('relu'))
-model.add(Conv2D(128, (3, 3)))
-model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2),strides=1))
+# =============================================================================
+# model.add(Conv2D(128, (3, 3)))
+# model.add(Activation('relu'))
+# model.add(Conv2D(128, (3, 3)))
+# model.add(Activation('relu'))
+# =============================================================================
+model.add(MaxPooling2D(pool_size=(2, 2),strides=1))
 
 # =============================================================================
 # model.add(Conv2D(128, (3, 3)))
@@ -192,11 +197,11 @@ model.add(Activation('relu'))
 # =============================================================================
 
 model.add(Flatten())
-model.add(Dense(31))
+model.add(Dense(16))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 
-model.add(Dense(15))
+model.add(Dense(8))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
@@ -249,5 +254,6 @@ def predict(imin,imax):
         plt.title('Cloud-3')
         plt.show()
 predict(9,11)
+predict(5,8)
 
 
