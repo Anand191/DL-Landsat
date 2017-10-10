@@ -14,10 +14,9 @@ from scipy import misc
 from osgeo import gdal
 import matplotlib.pyplot as plt
 import numpy as np
-from U_Net1 import myUnet
+from U_Net2 import myUnet
 from skimage import io
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
-import params
 
 
 #%%
@@ -64,12 +63,14 @@ def img_preprocess(qa,b4,b3,b2, pt):
 #     img_t = img_to_array(img_t)
 # =============================================================================
     
-    plt.figure(figsize=(40,20))
-    plt.subplot(131)
-    plt.imshow(orig,cmap = plt.get_cmap('gist_gray'))
-    plt.imshow(mask, cmap = plt.get_cmap('Reds'), alpha=0.3)
-    plt.title('Cloud-2')
-    plt.show()     
+# =============================================================================
+#     plt.figure(figsize=(40,20))
+#     plt.subplot(131)
+#     plt.imshow(orig,cmap = plt.get_cmap('gist_gray'))
+#     plt.imshow(mask, cmap = plt.get_cmap('Reds'), alpha=0.3)
+#     plt.title('Cloud-2')
+#     plt.show()     
+# =============================================================================
     
     img_m = np.reshape(mask,(mask.shape[0],mask.shape[1],1))
     #print(img_t.shape,img_m.shape)
@@ -113,14 +114,32 @@ def create_test_data(imin,imax):
 
 #%%
 #%%
-imgs_test = create_test_data(8,11)
-model = params.model_factory()
+imgs_test = create_test_data(0,3)
+myunet = myUnet()
+model = myunet.get_unet()
+
+#%%
+model.load_weights('unet.h5')
 imgs_mask_test = model.predict(imgs_test, batch_size=1, verbose=1)
 
 #%%
-model.load_weights('best_weights.hdf5')
-imgs_mask_test2 = model.predict(imgs_test, batch_size=1, verbose=1)
+for j in xrange(imgs_test.shape[0]):                    
+    plt.figure(figsize=(14,10))
+    plt.subplot(111)
+    plt.imshow(imgs_test[j],cmap=plt.get_cmap('gist_gray'))
+    plt.figure(figsize=(14,10))
+    plt.subplot(111)
+    plt.imshow(np.squeeze(imgs_mask_test[j],axis=2),cmap=plt.get_cmap('Reds'))
+
+#%%            
 
 #%%
-imgs_train,imgs_mask_train = create_training_data(0,6)
+def binary():
+    imgs_mask_test[imgs_mask_test > 0.5] = 1
+    imgs_mask_test[imgs_mask_test <= 0.5] = 0
+    for j in xrange(imgs_test.shape[0]):  
+        plt.figure(figsize=(20,16))
+        plt.subplot(111)
+        plt.imshow(np.squeeze(imgs_mask_test[j],axis=2),cmap=plt.get_cmap('Greys'))
+binary()
 
